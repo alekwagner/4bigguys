@@ -14,11 +14,31 @@ class MyGame(arcade.Window):
         os.chdir(file_path)
 
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
+
+        # our player
+        self.player_sprite = None
+
+        # Our physics engine
+        self.physics_engine = None
+
+        # A Camera that can be used for scrolling the screen
+        self.camera = None
+
+        # varrable to hold the info on which keys are pressed
+        self.left_pressed = False
+        self.right_pressed = False
+        self.up_pressed = False
+        self.down_pressed = False
+        self.jump_needs_reset = False
     
     # def on_resize(self, SCREEN_WIDTH, SCREEN_HEIGHT):
     #     super().on_resize(SCREEN_HEIGHT, SCREEN_WIDTH)
 
     def setup(self):
+
+        # Setup the Camera
+        self.camera = arcade.Camera(self.width, self.height)
+
         # asign my sprite lists to their arcade lists
         self.player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
@@ -29,20 +49,28 @@ class MyGame(arcade.Window):
         self.player_sprite.center_y = PLAYER_START_Y
         self.player_list.append(self.player_sprite)
 
+        # Create the 'physics engine'
+        self.physics_engine = arcade.PhysicsEngineSimple(
+            self.player_sprite, self.wall_list)
+
     def on_draw(self):
         """Render the screen."""
-        self.player_list.draw()
-
+        # clears the screen to background colour
         self.clear()
 
+        # Activate our Camera
+        self.camera.use()
+
+        #player
+        self.player_list.draw()
 
     def process_keychange(self):
        
         # Process up/down
         if self.up_pressed and not self.down_pressed:
-                self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED        
+            self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED        
         elif self.down_pressed and not self.up_pressed:
-                self.player_sprite.change_y = -PLAYER_MOVEMENT_SPEED
+             self.player_sprite.change_y = -PLAYER_MOVEMENT_SPEED
         else:
             self.player_sprite.change_y = 0
 
@@ -69,8 +97,8 @@ class MyGame(arcade.Window):
         # if key == arcade.key.L:
         #     self.setup(self.level)
 
-        if self.draw_info:
-            self.draw_info = False
+        # if self.draw_info:
+        #     self.draw_info = False
 
         self.process_keychange()
 
@@ -88,8 +116,21 @@ class MyGame(arcade.Window):
 
         self.process_keychange()     
 
+    
+    def center_camera_to_player(self):
+        screen_center_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
+        screen_center_y = self.player_sprite.center_y - (self.camera.viewport_height / 2)
+        player_centered = screen_center_x, screen_center_y
+        self.camera.move_to(player_centered)
+
     def on_update(self, delta_time):  
         self.player_list.update_animation(delta_time)
+
+        # Move the player with the physics engine
+        self.physics_engine.update()
+
+         # Position the camera
+        self.center_camera_to_player()
     
 def main():
     """Main function"""   
