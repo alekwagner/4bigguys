@@ -1,5 +1,7 @@
+import string
 import arcade
 import os
+import math
 from consts import SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_TITLE, PLAYER_START_X, PLAYER_START_Y, CHARACTER_SCALING, PLAYER_MOVEMENT_SPEED
 
 # The actual game 
@@ -44,7 +46,7 @@ class MyGame(arcade.Window):
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
 
         # Set up the player, specifically placing it at these coordinates.
-        self.player_sprite = arcade.Sprite("plasma_ammo.png", CHARACTER_SCALING)
+        self.player_sprite = arcade.Sprite("Floor_board_wall - Copy.png", CHARACTER_SCALING)
         self.player_sprite.center_x = PLAYER_START_X
         self.player_sprite.center_y = PLAYER_START_Y
         self.player_list.append(self.player_sprite)
@@ -63,6 +65,7 @@ class MyGame(arcade.Window):
 
         #player
         self.player_list.draw()
+        
 
     def process_keychange(self):
        
@@ -115,21 +118,50 @@ class MyGame(arcade.Window):
             self.right_pressed = False
 
         self.process_keychange()     
+        
+    def center_camera_to_player(self):
+            self.screen_left_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
+            self.screen_bottom_y = self.player_sprite.center_y - (self.camera.viewport_height / 2)
+            player_centered = self.screen_left_x, self.screen_bottom_y
+            self.camera.move_to(player_centered)
 
     
-    def center_camera_to_player(self):
-        screen_center_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
-        screen_center_y = self.player_sprite.center_y - (self.camera.viewport_height / 2)
-        player_centered = screen_center_x, screen_center_y
-        self.camera.move_to(player_centered)
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        """ Called whenever the mouse button is clicked. """
+
+        mouse_x = self.screen_left_x + x 
+        mouse_y = self.screen_bottom_y + y
+
+
+        # Get from the mouse the destination location for the bullet
+        # IMPORTANT! If you have a scrolling screen, you will also need
+        # to add in self.view_bottom and self.view_left.
+        
+        x_diff = mouse_x - self.player_sprite.center_x
+        y_diff = mouse_y - self.player_sprite.center_y
+        angle_in_radians = math.atan2(y_diff, x_diff)
+
+        # Angle the bullet sprite so it doesn't look like it is flying
+        # sideways.
+        self.player_sprite.angle = math.degrees(angle_in_radians)
+        print(f"Bullet angle: {self.player_sprite.angle:.2f}")
+        
+        
+        
+
+
+
+    
 
     def on_update(self, delta_time):  
+    #updates the screen and changes frames
         self.player_list.update_animation(delta_time)
 
         # Move the player with the physics engine
         self.physics_engine.update()
 
-         # Position the camera
+        # Position the camera
         self.center_camera_to_player()
     
 def main():
